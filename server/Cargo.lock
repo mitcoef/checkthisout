@@ -365,6 +365,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd16c4719339c4530435d38e511904438d07cce7950afa3718a84ac36c10e89e"
 
 [[package]]
+name = "checkthisout"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "axum-server",
+ "dotenv",
+ "geoutils",
+ "sea-orm",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -583,10 +597,6 @@ checksum = "a62bc1cf6f830c2ec14a513a9fb124d0a213a629668a4186f329db21fe045652"
 dependencies = [
  "percent-encoding",
 ]
-
-[[package]]
-name = "frontend"
-version = "0.1.0"
 
 [[package]]
 name = "funty"
@@ -1744,20 +1754,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "axum",
- "axum-server",
- "dotenv",
- "geoutils",
- "sea-orm",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
