@@ -13,7 +13,10 @@ use axum::{
     Router,
 };
 use database::{filtered_ranks, prelude::*, profiles};
-use sea_orm::{ColumnTrait, Database, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
+use sea_orm::{
+    ColumnTrait, Database, DatabaseConnection, DbBackend, DbErr, EntityTrait, JoinType,
+    QueryFilter, QueryOrder, QuerySelect, QueryTrait, RelationTrait,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ReqQuery {
@@ -31,18 +34,13 @@ pub async fn handler(
         .parse::<i32>()
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    let result = filtered_ranks::Entity::find()
+    let profiles = profiles::Entity::find()
+        .join(JoinType::LeftJoin, profiles::Relation::FilteredRanks.def())
         .filter(filtered_ranks::Column::Postcode.eq(postcode))
+        .order_by_desc(filtered_ranks::Column::Rank)
         .all(&db)
         .await
         .unwrap();
-
-    let mut profiles : Vec<profiles::Model> = Vec::new();
-
-    for model in result {
-        let profile = profiles::Entity::find_by_id(model.profile_id).one(&db).await.unwrap().unwrap();
-        profiles.push(profile);
-    }
 
     Ok(serde_json::to_string(&profiles).unwrap())
 }
