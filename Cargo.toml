@@ -15,6 +15,7 @@ axum = { version = "0.6.20", features = [
 ] }
 axum-server = "0.5.1"
 dotenv = "0.15.0"
+geoutils = "0.5.1"
 sea-orm = { version = "0.12", features = [
     "with-chrono",
     "sqlx-postgres",
