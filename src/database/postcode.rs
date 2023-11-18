@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[sea_orm(table_name = "postcode")]
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
-    pub postcode: String,
+    pub postcode: i32,
     #[sea_orm(column_type = "Double")]
     pub lon: f64,
     #[sea_orm(column_type = "Double")]
@@ -19,6 +19,24 @@ pub struct Model {
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
-pub enum Relation {}
+pub enum Relation {
+    #[sea_orm(has_many = "super::filtered_ranks::Entity")]
+    FilteredRanks,
+}
+
+impl Related<super::filtered_ranks::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::FilteredRanks.def()
+    }
+}
+
+impl Related<super::profiles::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::filtered_ranks::Relation::Profiles.def()
+    }
+    fn via() -> Option<RelationDef> {
+        Some(super::filtered_ranks::Relation::Postcode.def().rev())
+    }
+}
 
 impl ActiveModelBehavior for ActiveModel {}
