@@ -47,7 +47,7 @@ pub struct APIResponse {
 #[derive(Properties, PartialEq, Clone)]
 pub struct TableProps {
     pub offset: u64,
-    pub data: Vec<Craftsman>,
+    pub data: Option<Vec<Craftsman>>,
     // pub update: Callback<(u64, Vec<Craftsman>)>
 }
 
@@ -76,7 +76,7 @@ impl Component for MyTable {
                 </thead>
                 <tbody>
                     {
-                        for self.props.data.iter().map(|item| {
+                        for self.props.data.clone().unwrap_or(Vec::new()).iter().map(|item| {
                             html! {
                                 <tr>
                                     <td>{ &item.name }</td>
@@ -110,45 +110,48 @@ impl Component for MyTable {
 #[function_component(CraftFinder)]
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
-    let offset = 0;
-    let data = use_state(|| None);
 
-    {
-        let data = data.clone();
-        use_effect(move || {
-            if data.is_none() {
-                spawn_local(async move {
-                    let result = get_craftsmen(offset).await;
-                    data.set(Some(result));
-                });
-            }
-
-            || {}
-        });
+    html! {
+        <MyTable offset= {0} data={None} />
     }
+    // let data = use_state(|| None);
 
-    match data.as_ref() {
-        None => {
-            html! {
-                <div>{"No server response"}</div>
-            }
-        }
-        Some(craftsmen) => {
-            let props = TableProps {
-                data: craftsmen.clone(),
-                offset: craftsmen.len() as u64,
-            };
+    // {
+    //     let data = data.clone();
+    //     use_effect(move || {
+    //         if data.is_none() {
+    //             spawn_local(async move {
+    //                 let result = get_craftsmen("99998".to_owned(), offset).await;
+    //                 data.set(Some(result));
+    //             });
+    //         }
 
-            html! {
-                <MyTable offset= {props.offset} data={props.data} />
-            }
-        }
-    }
+    //         || {}
+    //     });
+    // }
+
+    // match data.as_ref() {
+    //     None => {
+    //         html! {
+    //             <div>{"No server response"}</div>
+    //         }
+    //     }
+    //     Some(craftsmen) => {
+    //         let props = TableProps {
+    //             data: None,
+    //             offset: craftsmen.len() as u64,
+    //         };
+
+    //         html! {
+    //             <MyTable offset= {props.offset} data={props.data} />
+    //         }
+    //     }
+    // }
 }
 
-async fn get_craftsmen(offset: u64) -> Vec<Craftsman> {
+async fn get_craftsmen(postcode: String, offset: u64) -> Vec<Craftsman> {
     // do one request starting from offset
-    let resp = Request::get(format!("/craftsmen?postalcode=99998&offset={offset}").as_str())
+    let resp = Request::get(format!("/craftsmen?postalcode={postcode}&offset={offset}").as_str())
         .send()
         .await
         .unwrap();
