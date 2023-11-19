@@ -47,6 +47,7 @@ pub struct APIResponse {
 #[derive(Properties, PartialEq, Clone)]
 pub struct TableProps {
     pub offset: u64,
+    pub postcode: Option<String>,
     pub data: Option<Vec<Craftsman>>,
     // pub update: Callback<(u64, Vec<Craftsman>)>
 }
@@ -111,8 +112,10 @@ impl Component for MyTable {
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
 
+    let opt : Option<String> = None;
+
     html! {
-        <MyTable offset= {0} data={None} />
+        <MyTable offset= {0} postcode={opt} data={None} />
     }
     // let data = use_state(|| None);
 
