@@ -1,6 +1,9 @@
+use std::ops::Deref;
+
 use gloo_net::http::Request;
 use serde::Deserialize;
 use wasm_bindgen_futures::{js_sys::JSON, spawn_local};
+use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -14,16 +17,13 @@ enum Route {
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! { <CraftFinder /> },
-        Route::HelloServer => html! { <>
-        <head>
-        <meta charset="utf-8" />
-        <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;,"/>
-        <link data-trunk="true" href="./tailwindstyle.css" rel="css" />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <title>{"CraftFinder"}</title>
-        </head>
-        <HelloServer /> </> },
+        Route::Home => {
+            let opt: Option<String> = None;
+            let custom_form_submit = Callback::from(|data: Vec<Craftsman>| {});
+            html! {
+            <CraftFinder /> }
+        }
+        Route::HelloServer => html! { <HelloServer /> },
     }
 }
 
@@ -52,121 +52,91 @@ pub struct APIResponse {
     craftsmen: Vec<Craftsman>,
 }
 
-#[derive(Properties, PartialEq, Clone)]
-pub struct TableProps {
+struct Data {
     pub offset: u64,
-    pub postcode: Option<String>,
-    pub data: Option<Vec<Craftsman>>,
-    // pub update: Callback<(u64, Vec<Craftsman>)>
+    pub postcode: String,
+    pub data: Vec<Craftsman>,
+
 }
 
-struct MyTable {
-    props: TableProps,
+impl Data {
+    pub fn init() -> Self {
+        Self { offset: 0, postcode: "".to_owned(), data: Vec::new() }
+    }
+
+    
 }
-
-impl Component for MyTable {
-    type Message = ();
-    type Properties = TableProps;
-
-    fn create(ctx: &Context<Self>) -> Self {
-        Self {
-            props: ctx.props().clone(),
-        }
-    }
-
-    fn view(&self, ctx: &Context<Self>) -> Html {
-        html! {
-            <>
-            <div class={classes!("flex", "min-h-screen", "flex-col")}>
-            <form action="/craftsmen">
-                <label class={classes!("text-sky-400", "border--none", "px-8", "py-4")} for="postcode_form">{"Postcode:"}</label>
-                <input class={classes!("text-sky-400", "border--none", "px-8", "py-4")} type="text" id="postcode_form" name="postalcode" value="80333"/><br/>
-                <input class={classes!("bg-blue-100", "border-solid", "border-2", "border-sky-400", "px-8", "py-4")} type="submit" value="Find Craftsmen"/>
-            </form>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="bg-blue-100 border text-left px-8 py-4">{"Name"}</th>
-                        <th class="bg-blue-100 border text-left px-8 py-4">{"Ranking"}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {
-                        for self.props.data.clone().unwrap_or(Vec::new()).iter().map(|item| {
-                            html! {
-                                <tr>
-                                    <td class="border px-8 py-4">{ &item.name }</td>
-                                    <td class="border px-8 py-4">{ &item.ranking_score }</td>
-                                </tr>
-                            }
-                        })
-                    }
-                </tbody>
-            </table>
-            </div>
-            </>
-        }
-    }
-
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        true
-    }
-
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        true
-    }
-
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {}
-
-    fn prepare_state(&self) -> Option<String> {
-        None
-    }
-
-    fn destroy(&mut self, ctx: &Context<Self>) {}
-}
-
 #[function_component(CraftFinder)]
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
 
-    let opt: Option<String> = None;
+    let state = use_state(|| Data::init());
+
+    let data = state.clone();
+    let postcode_changes = Callback::from(move |postcode : String| {
+        let data = data.clone();
+        spawn_local(async move {
+            let mut result = get_craftsmen(postcode.clone(), data.offset).await;
+            let (offset,new)  = if postcode == data.postcode {
+                let mut vals = data.data.clone();
+                vals.append(&mut result);
+                (vals.len() as u64, vals)
+            }
+            else {
+                (0, result)
+            };
+
+            data.set(Data { offset, postcode, data: new });
+        });
+    });
+
+    let form_onsubmit = Callback::from(|_: Vec<Craftsman>| {});
+
+    let data = state.clone();
+    let onsubmit = Callback::from(move |event: SubmitEvent| {
+        event.prevent_default();
+        let data = data.deref().clone();
+        form_onsubmit.emit(data.data.clone());
+    });
+
+    let onchange = Callback::from(move |event: Event| {
+        let value = event
+            .target()
+            .unwrap()
+            .unchecked_into::<HtmlInputElement>()
+            .value();
+        postcode_changes.emit(value);
+    });
+
+    let data = state.clone();
 
     html! {
-        <MyTable offset= {0} postcode={opt} data={None} />
+        <><form onsubmit={onsubmit}>
+        <input type="text" name={"PLZ"} onchange={onchange} placeholder={""} />
+        <button type="submit"> {"Suche"}</button>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                    <th>{"Name"}</th>
+                    <th>{"Ranking"}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {
+                    for data.data.clone().iter().map(|item| {
+                        html! {
+                            <tr>
+                                <td>{ &item.name }</td>
+                                <td>{ &item.ranking_score }</td>
+                            </tr>
+                        }
+                    })
+                }
+            </tbody>
+        </table>
+        </>
     }
-    // let data = use_state(|| None);
-
-    // {
-    //     let data = data.clone();
-    //     use_effect(move || {
-    //         if data.is_none() {
-    //             spawn_local(async move {
-    //                 let result = get_craftsmen("99998".to_owned(), offset).await;
-    //                 data.set(Some(result));
-    //             });
-    //         }
-
-    //         || {}
-    //     });
-    // }
-
-    // match data.as_ref() {
-    //     None => {
-    //         html! {
-    //             <div>{"No server response"}</div>
-    //         }
-    //     }
-    //     Some(craftsmen) => {
-    //         let props = TableProps {
-    //             data: None,
-    //             offset: craftsmen.len() as u64,
-    //         };
-
-    //         html! {
-    //             <MyTable offset= {props.offset} data={props.data} />
-    //         }
-    //     }
-    // }
 }
 
 async fn get_craftsmen(postcode: String, offset: u64) -> Vec<Craftsman> {

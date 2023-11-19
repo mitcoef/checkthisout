@@ -57,7 +57,7 @@ async fn main() -> Result<(), DbErr> {
         }))
         .with_state(state);
 
-    let addr: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 1339));
+    let addr: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 3000));
     axum_server::bind(addr)
         .serve(router.into_make_service())
         .await

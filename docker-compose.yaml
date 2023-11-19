@@ -1,20 +1,20 @@
 version: '3'
 services:
-  # craftfinder:
-  #   image: rust:latest
-  #   container_name: craftfinder
-  #   volumes:
-  #     - ./:/app
-  #   working_dir: /app
-  #   environment:
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: hackerpassword
-  #     POSTGRES_DB: craftfinder_db
-  #     POSTGRES_PORT: 5432
-  #     DATABASE_URL: postgresql://postgres:hackerpassword@postgres:5432/craftfinder_db
-  #   command: cargo run --bin server
-  #   ports:
-  #     - "1339:1339"
+  craftfinder:
+    image: rust:latest
+    container_name: craftfinder
+    volumes:
+      - ./:/app
+    working_dir: /app
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: hackerpassword
+      POSTGRES_DB: craftfinder_db
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql://postgres:hackerpassword@postgres:5432/craftfinder_db
+    command: cargo run --bin server
+    ports:
+      - "3000:3000"
   postgres:
     image: postgres:latest
     container_name: postgres
