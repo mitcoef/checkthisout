@@ -2,10 +2,9 @@ use dotenv::dotenv;
 use sea_orm::{Database, EntityTrait};
 use sea_orm::{DatabaseConnection, DbErr};
 use std::env::var;
-use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::database::{self, postcode};
+use crate::database::postcode;
 use crate::utils::postcode_utils::Postcode;
 
 #[derive(Clone)]
@@ -19,7 +18,7 @@ pub async fn init_state() -> Result<AppState, DbErr> {
     let db_url = var("DATABASE_URL").expect("DATABASE_URL missing from .env");
     let db = Database::connect(&db_url).await?;
 
-    let postcodes: Vec<Postcode> = database::postcode::Entity::find()
+    let postcodes: Vec<Postcode> = postcode::Entity::find()
         .all(&db)
         .await
         .unwrap()

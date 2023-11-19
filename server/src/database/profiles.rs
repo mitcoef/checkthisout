@@ -17,7 +17,8 @@ pub struct Model {
     pub lon: f64,
     #[sea_orm(column_type = "Double")]
     pub lat: f64,
-    pub max_driving_distance: i32,
+    #[sea_orm(column_type = "Double")]
+    pub max_driving_distance: f64,
     #[sea_orm(column_type = "Double")]
     pub profile_score: f64,
     #[sea_orm(column_type = "Double")]

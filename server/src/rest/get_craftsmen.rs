@@ -4,8 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use sea_orm::{
-    ColumnTrait, Database, EntityTrait, JoinType, QueryFilter, QueryOrder, QuerySelect,
-    RelationTrait,
+    ColumnTrait, EntityTrait, JoinType, QueryFilter, QueryOrder, QuerySelect, RelationTrait,
 };
 use serde::{Deserialize, Serialize};
 
@@ -16,10 +15,16 @@ const LIMIT: u64 = 20;
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ReqQuery {
     postalcode: String,
+    offset: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Response {
+    postalcode: String,
 }
 
 pub async fn handler(
-    Query(ReqQuery { postalcode }): Query<ReqQuery>,
+    Query(ReqQuery { postalcode, offset }): Query<ReqQuery>,
     State(AppState { db, .. }): State<AppState>,
 ) -> Result<String, StatusCode> {
     let postcode = postalcode
@@ -31,6 +36,7 @@ pub async fn handler(
         .join(JoinType::LeftJoin, profiles::Relation::FilteredRanks.def())
         .filter(filtered_ranks::Column::Postcode.eq(postcode))
         .order_by_desc(filtered_ranks::Column::Rank)
+        .offset(offset)
         .limit(Some(LIMIT))
         .all(&db)
         .await

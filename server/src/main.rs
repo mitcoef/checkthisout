@@ -3,6 +3,7 @@ use std::net::SocketAddr;
 mod database;
 mod rest;
 mod utils;
+mod traits;
 
 use axum::{
     routing::{get, patch},
