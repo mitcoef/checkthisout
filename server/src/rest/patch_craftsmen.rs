@@ -19,20 +19,21 @@ use crate::{
 };
 
 use super::app_state::AppState;
-const DEFAULT_DISTANCE: f64 = 80.0;
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReqBody {
-    maxDrivingDistance: Option<f64>,
-    profilePictureScore: Option<f64>,
-    profileDescriptionScore: Option<f64>,
+    max_driving_distance: Option<f64>,
+    profile_picture_score: Option<f64>,
+    profile_description_score: Option<f64>,
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Updated {
-    pub maxDrivingDistance: f64,
-    pub profilePictureScore: f64,
-    pub profileDescriptionScore: f64,
+    pub max_driving_distance: f64,
+    pub profile_picture_score: f64,
+    pub profile_description_score: f64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -212,9 +213,9 @@ pub async fn handler(
     Json(input): Json<ReqBody>,
 ) -> Result<String, StatusCode> {
     let ReqBody {
-        maxDrivingDistance,
-        profilePictureScore,
-        profileDescriptionScore,
+        max_driving_distance,
+        profile_picture_score,
+        profile_description_score,
     } = input;
 
     let profile: profiles::Model = profiles::Entity::find_by_id(id)
@@ -223,12 +224,12 @@ pub async fn handler(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    match maxDrivingDistance {
+    match max_driving_distance {
         Some(distance) => {
             return update_distances(
                 profile,
-                profilePictureScore,
-                profileDescriptionScore,
+                profile_picture_score,
+                profile_description_score,
                 distance,
                 postcodes,
                 db,
@@ -238,8 +239,8 @@ pub async fn handler(
         None => {
             return update_score_and_ranks(
                 profile,
-                profilePictureScore,
-                profileDescriptionScore,
+                profile_picture_score,
+                profile_description_score,
                 db,
             )
             .await

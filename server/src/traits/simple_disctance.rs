@@ -6,6 +6,8 @@ pub trait SimpleDistance {
     fn calculate_simple_distance_km(&self, to: &Self) -> f64;
 }
 
+// extend Location type so more accurate distance calculation can be easily hot-swapped in,
+// by calling corrensping methods
 impl SimpleDistance for Location {
     fn calculate_simple_distance_km(&self, to: &Self) -> f64 {
         let (lat1, lon1) = (self.latitude().to_radians(), self.longitude().to_radians());

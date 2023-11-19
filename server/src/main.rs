@@ -2,12 +2,12 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Html;
 use axum::response::IntoResponse;
-use std::net::{IpAddr, Ipv6Addr, SocketAddr};
+use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::str::FromStr;
 use tokio::fs;
-use tower::{ServiceBuilder, ServiceExt};
+use tower::ServiceExt;
 use tower_http::services::ServeDir;
+use sea_orm::DbErr;
 
 mod database;
 mod rest;
@@ -18,9 +18,6 @@ use axum::{
     routing::{get, patch},
     Router,
 };
-use rest::app_state;
-use sea_orm::{DbErr, EntityTrait};
-use utils::postcode_utils::Postcode;
 
 #[tokio::main]
 async fn main() -> Result<(), DbErr> {
