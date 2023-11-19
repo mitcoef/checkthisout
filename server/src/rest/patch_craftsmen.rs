@@ -47,6 +47,7 @@ async fn update_score_and_ranks(
     desc_score: Option<f64>,
     db: DatabaseConnection,
 ) -> Result<String, StatusCode> {
+    // no max distance was given, at least one score is expected
     let new_score = scoring::calc_score_from_options(
         pic_score,
         desc_score,
@@ -55,7 +56,8 @@ async fn update_score_and_ranks(
     )
     .ok_or(StatusCode::BAD_REQUEST)?;
 
-    let filters: Vec<filtered_ranks::ActiveModel> = filtered_ranks::Entity::find()
+    // distance doesn't change, only rank, so query all in preperation for update
+    let ranks: Vec<filtered_ranks::ActiveModel> = filtered_ranks::Entity::find()
         .filter(filtered_ranks::Column::ProfileId.eq(profile.id))
         .order_by_asc(filtered_ranks::Column::Distance)
         .all(&db)
@@ -72,6 +74,7 @@ async fn update_score_and_ranks(
 
     let mut profile: profiles::ActiveModel = profile.into();
 
+    // update all values that were changed
     if let Some(pic_score) = pic_score {
         profile.profile_picture_score = ActiveValue::Set(pic_score);
     }
@@ -82,12 +85,13 @@ async fn update_score_and_ranks(
 
     profile.profile_score = ActiveValue::Set(new_score);
 
+    // perform updates inside of transaction
     let txn = db
         .begin()
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    filtered_ranks::Entity::insert_many(filters)
+    filtered_ranks::Entity::insert_many(ranks)
         .on_empty_do_nothing()
         .on_conflict(
             sea_query::OnConflict::columns([
@@ -112,7 +116,7 @@ async fn update_score_and_ranks(
 
     let query_result: QueryResult = profile.into();
 
-    Ok(serde_json::to_string(&query_result).unwrap())
+    Ok(serde_json::to_string(&query_result).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?)
 }
 
 async fn update_distances(
@@ -133,6 +137,7 @@ async fn update_distances(
 
     let patch = PatchFilters {
         profile_id: profile.id,
+        // XXX this converts the meters to km, please excuse the magic number
         max_driving_distance: max_driving_distance / 1000.0,
         profile_score: new_score.unwrap_or(profile.profile_score),
         loc: Location::new(profile.lat, profile.lon),
@@ -140,6 +145,7 @@ async fn update_distances(
 
     let mut profile: profiles::ActiveModel = profile.into();
 
+    // update all values that were changed
     if let Some(pic_score) = pic_score {
         profile.profile_picture_score = ActiveValue::Set(pic_score);
     }
@@ -197,7 +203,7 @@ async fn update_distances(
 
     let query_result: QueryResult = profile.into();
 
-    Ok(serde_json::to_string(&query_result).unwrap())
+    Ok(serde_json::to_string(&query_result).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?)
 }
 
 pub async fn handler(
