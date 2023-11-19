@@ -11,6 +11,9 @@ pub struct Craftsman {
     name: String,
     #[serde(rename = "rankingScore")]
     ranking_score: f64,
+    street: String,
+    house_number: String,
+    distance: f64,
 }
 
 #[derive(FromQueryResult, Serialize)]
@@ -18,6 +21,9 @@ pub struct ProfileWithRank {
     id: i32,
     first_name: String,
     last_name: String,
+    street: String,
+    house_number: String,
+    distance: f64,
     rank: f64,
 }
 
@@ -28,12 +34,19 @@ impl Into<Craftsman> for ProfileWithRank {
             first_name,
             last_name,
             rank,
+            street,
+            house_number,
+            distance,
+            ..
         } = self;
 
         Craftsman {
             id,
             name: format!("{first_name} {last_name}"),
+            street,
+            house_number,
             ranking_score: rank,
+            distance,
         }
     }
 }

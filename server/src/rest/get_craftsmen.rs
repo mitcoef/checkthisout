@@ -39,6 +39,7 @@ pub async fn handler(
     // TODO make the filter a subquery and then join with that (see if that does us any good)
     let craftsmen: Vec<Craftsman> = profiles::Entity::find()
         .column_as(filtered_ranks::Column::Rank, "rank")
+        .column_as(filtered_ranks::Column::Distance, "distance")
         .join(JoinType::LeftJoin, profiles::Relation::FilteredRanks.def())
         .filter(filtered_ranks::Column::Postcode.eq(postcode))
         .order_by_desc(filtered_ranks::Column::Rank)
