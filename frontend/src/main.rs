@@ -15,7 +15,15 @@ enum Route {
 fn switch(routes: Route) -> Html {
     match routes {
         Route::Home => html! { <CraftFinder /> },
-        Route::HelloServer => html! { <HelloServer /> },
+        Route::HelloServer => html! { <>
+        <head>
+        <meta charset="utf-8" />
+        <link rel="shortcut icon" type="image/x-icon" href="data:image/x-icon;,"/>
+        <link data-trunk="true" href="./tailwindstyle.css" rel="css" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <title>{"CraftFinder"}</title>
+        </head>
+        <HelloServer /> </> },
     }
 }
 
@@ -68,11 +76,18 @@ impl Component for MyTable {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         html! {
+            <>
+            <div class={classes!("flex", "min-h-screen", "flex-col")}>
+            <form action="/craftsmen">
+                <label class={classes!("text-sky-400", "border--none", "px-8", "py-4")} for="postcode_form">{"Postcode:"}</label>
+                <input class={classes!("text-sky-400", "border--none", "px-8", "py-4")} type="text" id="postcode_form" name="postalcode" value="80333"/><br/>
+                <input class={classes!("bg-blue-100", "border-solid", "border-2", "border-sky-400", "px-8", "py-4")} type="submit" value="Find Craftsmen"/>
+            </form>
             <table>
                 <thead>
                     <tr>
-                        <th>{"Name"}</th>
-                        <th>{"Ranking"}</th>
+                        <th class="bg-blue-100 border text-left px-8 py-4">{"Name"}</th>
+                        <th class="bg-blue-100 border text-left px-8 py-4">{"Ranking"}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -80,14 +95,16 @@ impl Component for MyTable {
                         for self.props.data.clone().unwrap_or(Vec::new()).iter().map(|item| {
                             html! {
                                 <tr>
-                                    <td>{ &item.name }</td>
-                                    <td>{ &item.ranking_score }</td>
+                                    <td class="border px-8 py-4">{ &item.name }</td>
+                                    <td class="border px-8 py-4">{ &item.ranking_score }</td>
                                 </tr>
                             }
                         })
                     }
                 </tbody>
             </table>
+            </div>
+            </>
         }
     }
 
@@ -112,7 +129,7 @@ impl Component for MyTable {
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
 
-    let opt : Option<String> = None;
+    let opt: Option<String> = None;
 
     html! {
         <MyTable offset= {0} postcode={opt} data={None} />
