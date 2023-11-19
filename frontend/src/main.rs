@@ -108,6 +108,12 @@ impl Component for MyTable {
 #[function_component(CraftFinder)]
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
+    let data: UseStateHandle<u64> = use_state(|| 0);
+
+    {
+
+        let parsed_data = get_craftsmen(*data).await;
+    }
 
     html! {
         <MyTable data=parsed_data />
