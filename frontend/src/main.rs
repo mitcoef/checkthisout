@@ -28,7 +28,7 @@ fn app() -> Html {
     }
 }
 
-#[derive(Deserialize, PartialEq)]
+#[derive(Deserialize, PartialEq, Clone)]
 pub struct Craftsman {
     id: i32,
     name: String,
@@ -44,9 +44,11 @@ pub struct APIResponse {
     craftsmen: Vec<Craftsman>,
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Clone)]
 pub struct TableProps {
+    pub offset: u64,
     pub data: Vec<Craftsman>,
+    // pub update: Callback<(u64, Vec<Craftsman>)>
 }
 
 struct MyTable {
@@ -59,7 +61,7 @@ impl Component for MyTable {
 
     fn create(ctx: &Context<Self>) -> Self {
         Self {
-            props: *ctx.props().to_owned(),
+            props: ctx.props().clone(),
         }
     }
 
@@ -108,21 +110,45 @@ impl Component for MyTable {
 #[function_component(CraftFinder)]
 fn craftfinder() -> Html {
     // first get 20 into list and trigger loading more with button
-    let data: UseStateHandle<u64> = use_state(|| 0);
+    let offset = 0;
+    let data = use_state(|| None);
 
     {
+        let data = data.clone();
+        use_effect(move || {
+            if data.is_none() {
+                spawn_local(async move {
+                    let result = get_craftsmen(offset).await;
+                    data.set(Some(result));
+                });
+            }
 
-        let parsed_data = get_craftsmen(*data).await;
+            || {}
+        });
     }
 
-    html! {
-        <MyTable data=parsed_data />
+    match data.as_ref() {
+        None => {
+            html! {
+                <div>{"No server response"}</div>
+            }
+        }
+        Some(craftsmen) => {
+            let props = TableProps {
+                data: craftsmen.clone(),
+                offset: craftsmen.len() as u64,
+            };
+
+            html! {
+                <MyTable offset= {props.offset} data={props.data} />
+            }
+        }
     }
 }
 
 async fn get_craftsmen(offset: u64) -> Vec<Craftsman> {
     // do one request starting from offset
-    let resp = Request::get(format!("/craftsmen?postalcode=10178?offset={offset}").as_str())
+    let resp = Request::get(format!("/craftsmen?postalcode=99998&offset={offset}").as_str())
         .send()
         .await
         .unwrap();
