@@ -1,5 +1,6 @@
 use gloo_net::http::Request;
-use wasm_bindgen_futures::spawn_local;
+use serde::Deserialize;
+use wasm_bindgen_futures::{js_sys::JSON, spawn_local};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -13,7 +14,7 @@ enum Route {
 
 fn switch(routes: Route) -> Html {
     match routes {
-        Route::Home => html! { <h1>{ "Hello Frontend" }</h1> },
+        Route::Home => html! { <CraftFinder /> },
         Route::HelloServer => html! { <HelloServer /> },
     }
 }
@@ -27,6 +28,107 @@ fn app() -> Html {
     }
 }
 
+#[derive(Deserialize, PartialEq)]
+pub struct Craftsman {
+    id: i32,
+    name: String,
+    #[serde(rename = "rankingScore")]
+    ranking_score: f64,
+    street: String,
+    house_number: String,
+    distance: f64,
+}
+
+#[derive(Deserialize)]
+pub struct APIResponse {
+    craftsmen: Vec<Craftsman>,
+}
+
+#[derive(Properties, PartialEq)]
+pub struct TableProps {
+    pub data: Vec<Craftsman>,
+}
+
+struct MyTable {
+    props: TableProps,
+}
+
+impl Component for MyTable {
+    type Message = ();
+    type Properties = TableProps;
+
+    fn create(ctx: &Context<Self>) -> Self {
+        Self {
+            props: *ctx.props().to_owned(),
+        }
+    }
+
+    fn view(&self, ctx: &Context<Self>) -> Html {
+        html! {
+            <table>
+                <thead>
+                    <tr>
+                        <th>{"Name"}</th>
+                        <th>{"Ranking"}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {
+                        for self.props.data.iter().map(|item| {
+                            html! {
+                                <tr>
+                                    <td>{ &item.name }</td>
+                                    <td>{ &item.ranking_score }</td>
+                                </tr>
+                            }
+                        })
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        true
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        true
+    }
+
+    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {}
+
+    fn prepare_state(&self) -> Option<String> {
+        None
+    }
+
+    fn destroy(&mut self, ctx: &Context<Self>) {}
+}
+
+#[function_component(CraftFinder)]
+fn craftfinder() -> Html {
+    // first get 20 into list and trigger loading more with button
+
+    html! {
+        <MyTable data=parsed_data />
+    }
+}
+
+async fn get_craftsmen(offset: u64) -> Vec<Craftsman> {
+    // do one request starting from offset
+    let resp = Request::get(format!("/craftsmen?postalcode=10178?offset={offset}").as_str())
+        .send()
+        .await
+        .unwrap();
+    let result = if resp.ok() {
+        let response: APIResponse = serde_json::from_value(resp.json().await.unwrap()).unwrap();
+        response.craftsmen
+    } else {
+        Vec::new()
+    };
+    result
+}
+
 #[function_component(HelloServer)]
 fn hello_server() -> Html {
     let data = use_state(|| None);
@@ -35,26 +137,26 @@ fn hello_server() -> Html {
     {
         let data = data.clone();
         use_effect(move || {
-            // if data.is_none() {
-            spawn_local(async move {
-                let resp = Request::get("/craftsmen?postalcode=10178")
-                    .send()
-                    .await
-                    .unwrap();
-                let result: Result<String, String> = {
-                    if !resp.ok() {
-                        Err(format!(
-                            "Error fetching data {} ({})",
-                            resp.status(),
-                            resp.status_text()
-                        ))
-                    } else {
-                        resp.text().await.map_err(|err| err.to_string())
-                    }
-                };
-                data.set(Some(result));
-            });
-            // }
+            if data.is_none() {
+                spawn_local(async move {
+                    let resp = Request::get("/craftsmen?postalcode=10178?offset=20")
+                        .send()
+                        .await
+                        .unwrap();
+                    let result: Result<String, String> = {
+                        if !resp.ok() {
+                            Err(format!(
+                                "Error fetching data {} ({})",
+                                resp.status(),
+                                resp.status_text()
+                            ))
+                        } else {
+                            resp.text().await.map_err(|err| err.to_string())
+                        }
+                    };
+                    data.set(Some(result));
+                });
+            }
 
             || {}
         });
