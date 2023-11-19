@@ -2,17 +2,17 @@ use axum::body::Body;
 use axum::http::{Request, StatusCode};
 use axum::response::Html;
 use axum::response::IntoResponse;
+use sea_orm::DbErr;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use tokio::fs;
 use tower::ServiceExt;
 use tower_http::services::ServeDir;
-use sea_orm::DbErr;
 
 mod database;
 mod rest;
-mod utils;
 mod traits;
+mod utils;
 
 use axum::{
     routing::{get, patch},

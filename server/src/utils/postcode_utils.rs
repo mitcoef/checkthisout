@@ -6,7 +6,6 @@ use crate::traits::simple_disctance::SimpleDistance;
 
 use super::ranking::calc_rank;
 
-
 pub struct Postcode {
     postcode: i32,
     loc: Location,
@@ -40,7 +39,6 @@ impl Into<Postcode> for postcode::Model {
         }
     }
 }
-
 
 // TODO renameme
 pub struct PatchFilters {
